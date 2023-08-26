@@ -1,0 +1,3 @@
+[submodule "python-dali"]
+	path = python-dali
+	url = git@github.com:sde1000/python-dali.git
