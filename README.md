@@ -69,6 +69,10 @@
   git submodule update --remote
   ```
 
+- It turned out to be very helpful to develop with the VSCode remote SSH
+  extension. It's easy to connect if you already added your ssh keys as
+  described above.
+
 ## Examples
 
 - Simple example that lets the DALI devices blink a few times:
