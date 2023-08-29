@@ -2,21 +2,22 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <NTPClient.h>
 #include <SimpleKalmanFilter.h>
 
 // --- Config start ---
 
-const char* topic = "sw1";
+const char* topic = "accel/1";
 
 const char* ssid = "happyswing";
 const char* password = "****";
 
-const char* mqtt_server = "192.168.1.254";
-const int mqtt_port = 1883;
-const char* mqtt_username = "";
-const char* mqtt_password = "";
+const char* mqtt_server = "mqtt.happyswing.at";
+const int mqtt_port = 8883;
+const char* mqtt_username = "happyswing";
+const char* mqtt_password = "mohapmohap!";
 
 const char* ntp_server = "pool.ntp.org";
 
@@ -24,12 +25,34 @@ const unsigned long send_interval_ms = 100;
 
 const unsigned int measurement_buffer_size = 32;
 
+const char* test_root_ca = \
+    "-----BEGIN CERTIFICATE-----\n" \ 
+    "MIIDUTCCAjmgAwIBAgIJAPPYCjTmxdt/MA0GCSqGSIb3DQEBCwUAMD8xCzAJBgNV\n" \ 
+    "BAYTAkNOMREwDwYDVQQIDAhoYW5nemhvdTEMMAoGA1UECgwDRU1RMQ8wDQYDVQQD\n" \ 
+    "DAZSb290Q0EwHhcNMjAwNTA4MDgwNjUyWhcNMzAwNTA2MDgwNjUyWjA/MQswCQYD\n" \ 
+    "VQQGEwJDTjERMA8GA1UECAwIaGFuZ3pob3UxDDAKBgNVBAoMA0VNUTEPMA0GA1UE\n" \ 
+    "AwwGUm9vdENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzcgVLex1\n" \ 
+    "EZ9ON64EX8v+wcSjzOZpiEOsAOuSXOEN3wb8FKUxCdsGrsJYB7a5VM/Jot25Mod2\n" \ 
+    "juS3OBMg6r85k2TWjdxUoUs+HiUB/pP/ARaaW6VntpAEokpij/przWMPgJnBF3Ur\n" \ 
+    "MjtbLayH9hGmpQrI5c2vmHQ2reRZnSFbY+2b8SXZ+3lZZgz9+BaQYWdQWfaUWEHZ\n" \ 
+    "uDaNiViVO0OT8DRjCuiDp3yYDj3iLWbTA/gDL6Tf5XuHuEwcOQUrd+h0hyIphO8D\n" \ 
+    "tsrsHZ14j4AWYLk1CPA6pq1HIUvEl2rANx2lVUNv+nt64K/Mr3RnVQd9s8bK+TXQ\n" \ 
+    "KGHd2Lv/PALYuwIDAQABo1AwTjAdBgNVHQ4EFgQUGBmW+iDzxctWAWxmhgdlE8Pj\n" \ 
+    "EbQwHwYDVR0jBBgwFoAUGBmW+iDzxctWAWxmhgdlE8PjEbQwDAYDVR0TBAUwAwEB\n" \ 
+    "/zANBgkqhkiG9w0BAQsFAAOCAQEAGbhRUjpIred4cFAFJ7bbYD9hKu/yzWPWkMRa\n" \ 
+    "ErlCKHmuYsYk+5d16JQhJaFy6MGXfLgo3KV2itl0d+OWNH0U9ULXcglTxy6+njo5\n" \ 
+    "CFqdUBPwN1jxhzo9yteDMKF4+AHIxbvCAJa17qcwUKR5MKNvv09C6pvQDJLzid7y\n" \ 
+    "E2dkgSuggik3oa0427KvctFf8uhOV94RvEDyqvT5+pgNYZ2Yfga9pD/jjpoHEUlo\n" \ 
+    "88IGU8/wJCx3Ds2yc8+oBg/ynxG8f/HmCC1ET6EHHoe2jlo8FpU/SgGtghS1YL30\n" \ 
+    "IWxNsPrUP+XsZpBJy/mvOhE5QXo6Y35zDqqj8tI7AGmAWu22jg==\n" \ 
+    "-----END CERTIFICATE-----\n";
+
 // --- Config end ---
 
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, ntp_server);
 
-WiFiClient espClient;
+WiFiClientSecure espClient = WiFiClientSecure();
 PubSubClient client(espClient);
 
 SimpleKalmanFilter kalmanAngle(10, 10, 1);
@@ -45,6 +68,10 @@ float measurements[measurement_buffer_size] = { 0.0 };
 
 void setup() {
   Serial.begin(115200);
+  // TODO: use CA cert and don't run in insecure mode
+  // espClient.setCACert(test_root_ca);
+  espClient.setInsecure();
+
   setupWiFi();
   setupMQTT();
   setupUnix();
@@ -104,6 +131,7 @@ char* readUnixTime() {
 void callback(char* topic, byte* payload, unsigned int length) {}
 
 void reconnectWiFiIfLost() {
+  // TODO: also reconnect MQTT
   if ((WiFi.status() != WL_CONNECTED)) {
     Serial.println("Reconnecting to WiFi...");
     WiFi.disconnect();
