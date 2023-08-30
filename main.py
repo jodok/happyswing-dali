@@ -34,7 +34,7 @@ def map_value( value, min=0, max=254):
     
     return  max * value/100.0 + min * (1.0 - value/100.0)
 
-async def puplish_error_message(client, message: str): 
+async def publish_error_message(client, message: str): 
     await client.publish("error/raspberry", payload=message)
 
 async def handle_dim_value(dali_dev,address, dim_value ):
@@ -81,7 +81,7 @@ async def main(args):
 
             except Exception as e: 
                 print(f"Exception: {e}")
-                await puplish_error_message(mqtt_client, str(e))
+                await publish_error_message(mqtt_client, str(e))
 
     dali_dev.disconnect()
     mqtt_client.close()
