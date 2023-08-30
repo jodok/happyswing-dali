@@ -93,3 +93,39 @@
   where `120` is the dim level. `255` is the maximum dim level for 100%.
   You can use any value down to the minimal physical dim-level. The
   physial minimum is device specific (e.g. 1% = 86).
+
+
+## Auto start after boot
+
+We use `systemd` to autostart the happyswing service after boot. 
+
+First the `service` needs to be put in the right directory. 
+
+```bash 
+  sudo cp happyswing.service  /lib/systemd/system/happyswing.service
+```
+
+After that the service can be enabled with 
+
+```bash 
+  sudo systemctl daemon-reload
+  sudo systemctl enable happyswing
+  sudo systemctl start happyswing
+```
+
+To stop the service run 
+
+```bash 
+  sudo systemctl stop happyswing
+```
+
+
+To look at the logs of the service use 
+
+```bash 
+  journalctl -u happyswing
+```
+
+
+
+

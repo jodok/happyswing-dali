@@ -1,14 +1,13 @@
 import asyncio
-import math
-import logging
-import random
-import time
 import aiomqtt
 import re 
+import os
 import argparse
 from dali.driver.hid import tridonic, hasseb
-from dali.gear.general import Up, Down, SetMinLevel, SetMaxLevel, DAPC, RecallMaxLevel, RecallMinLevel, QueryActualLevel, Off
-from dali.address import Broadcast
+from dali.gear.general import  DAPC 
+from dali.address import Broadcast,GearShort
+from dotenv import load_dotenv
+
 
 async def connect_dali():
 
@@ -19,13 +18,12 @@ async def connect_dali():
     print(f"Connected, firmware={dali_dev.firmware_version}, serial={dali_dev.serial}")
     return dali_dev
 
-async def connect_mqtt(addr,port=8883,ca_certs=None, username=None, password=None):
+async def connect_mqtt(addr,port,username, password,ca_certs=None,):
     
     tls_params = None
-    if ca_certs != "":
+    if ca_certs:
         tls_params = aiomqtt.client.TLSParameters(ca_certs=ca_certs)
-
-    client = aiomqtt.Client("mqtt.happyswing.at",port=8883, username=username, password=password, tls_params = tls_params,tls_insecure=True)
+    client = aiomqtt.Client(addr,port=port, username=username, password=password, tls_params = tls_params,tls_insecure=True)
     await client.connect()
     print("MQTT client connected.")
     return client
@@ -67,7 +65,7 @@ async def main(args):
         async for msg in msgs:
             
             try: 
-                print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+                #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
                 if msg.topic.matches("cmd/led/all/dim"): 
                     dim_value = msg.payload.decode()
@@ -76,7 +74,7 @@ async def main(args):
                 elif msg.topic.matches("cmd/led/+/dim"): 
                     dim_value = msg.payload.decode()
                     led_id = extract_led_id(str(msg.topic))
-                    await handle_dim_value(dali_dev,led_id, dim_value)
+                    await handle_dim_value(dali_dev,GearShort(led_id), dim_value)
 
                 else:
                     raise Exception("Message with unhandled Topic recieved!")
@@ -90,14 +88,15 @@ async def main(args):
 
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.DEBUG)
+    load_dotenv()
 
     parser = argparse.ArgumentParser(description="Parse MQTT configuration parameters")
     
     parser.add_argument("--mqtt_address", default="mqtt.happyswing.at", help="MQTT broker address")
-    parser.add_argument("--mqtt_port", type=int, default=8333, help="MQTT broker port")
-    parser.add_argument("--ca_certs", default="mqtt.happyswing.at_cacert.pem",help="Path to CA certificates")
+    parser.add_argument("--mqtt_port", type=int, default=8883, help="MQTT broker port")
+    parser.add_argument("--ca_certs", default="./mqtt.happyswing.at_cacert.pem",help="Path to CA certificates")
     parser.add_argument("--mqtt_username", default="happyswing", help="MQTT username")
-    parser.add_argument("--mqtt_password", default="mohapmohap!", help="MQTT password")
+    parser.add_argument("--mqtt_password", default=os.getenv("MQTT_PASSWORD"),help="MQTT password")
     
     args = parser.parse_args()
 

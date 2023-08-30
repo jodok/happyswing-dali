@@ -4,7 +4,8 @@
 
  [Service]
  Type=idle
- ExecStart=/home/pi/happyswing-dali/.venv/bin/python /home/pi/happyswing-dali/main.py > /home/pi/happyswing-dali/output.log 2>&1
+ WorkingDirectory=/home/pi/happyswing-dali
+ ExecStart=/home/pi/happyswing-dali/.venv/bin/python /home/pi/happyswing-dali/main.py
 
  [Install]
  WantedBy=multi-user.target
