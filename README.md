@@ -113,7 +113,7 @@ After that the service can be enabled with
   sudo systemctl start happyswing
 ```
 
-Now the the service run automatcally when the Raspberry Pi started. 
+Now the service runs when the Raspberry Pi started. 
 
 
 To stop the service run 
