@@ -35,6 +35,9 @@ def map_value( value, min=0, max=254):
     if value < 0 or value > 100: 
         raise ValueError("Value must be between 0 and 100")
     
+    if value == 0:
+        return 0
+
     return  max * value/100.0 + min * (1.0 - value/100.0)
 
 async def publish_error_message(client, message: str): 
@@ -46,7 +49,7 @@ async def handle_dim_value(dali_dev,address, dim_value ):
         raise ValueError("Dim payload must be integer!")
 
     dim_value = int(dim_value)
-    dim_value = int(map_value(dim_value, 0,254))
+    dim_value = int(map_value(dim_value, 85,254))
     await dali_dev.send(DAPC(address, dim_value))
 
 def extract_led_id(topic):
