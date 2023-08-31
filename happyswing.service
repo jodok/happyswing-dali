@@ -1,0 +1,12 @@
+ [Unit]
+ Description=Happyswing Service
+ After=multi-user.target
+
+ [Service]
+ Type=idle
+ WorkingDirectory=/home/pi/happyswing-dali
+ ExecStart=/home/pi/happyswing-dali/.venv/bin/python /home/pi/happyswing-dali/main.py
+ #ExecStart=/home/pi/happyswing-dali/.venv/bin/python /home/pi/happyswing-dali/main.py --mqtt_address localhost  --ca_certs ""
+
+ [Install]
+ WantedBy=multi-user.target

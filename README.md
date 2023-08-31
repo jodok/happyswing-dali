@@ -93,3 +93,82 @@
   where `120` is the dim level. `255` is the maximum dim level for 100%.
   You can use any value down to the minimal physical dim-level. The
   physial minimum is device specific (e.g. 1% = 86).
+
+
+## Auto start after boot
+
+We use `systemd` to autostart the happyswing service after boot. 
+
+First the `service` needs to be put in the right directory. 
+
+```bash 
+  sudo cp happyswing.service  /lib/systemd/system/happyswing.service
+```
+
+After that the service can be enabled with 
+
+```bash 
+  sudo systemctl daemon-reload
+  sudo systemctl enable happyswing
+  sudo systemctl start happyswing
+```
+
+Now the service runs when the Raspberry Pi started. 
+
+
+To stop the service run 
+
+```bash 
+  sudo systemctl stop happyswing
+```
+
+
+To look at the logs of the service use 
+
+```bash 
+  journalctl -u happyswing
+```
+
+
+## MQTT Broker
+
+A MQTT broker can be run locally. The following description will setup and configure 
+the Mosquitto MQTT Broker. 
+
+To install run: 
+
+```bash
+  sudo apt install mosquitto 
+```
+
+To start the broker after booting use
+
+```bash
+  sudo systemctl enable mosquitto
+```
+
+The broker is configured to listen on the same port as `mqtt.happyswing.at` and use the
+same username and password to easily switch. 
+
+
+To configure credentials run 
+
+```bash
+  sudo mosquitto_passwd -c /etc/mosquitto/credentials happyswing
+```
+
+Next, the following configurations are added to the file `/etc/mosquitto/conf.d/local.conf`
+
+```
+  listener 8883
+  allow_anonymous false
+  password_file /etc/mosquitto/credentials
+```
+
+If the local MQTT broker is used, the Happyswing App needs to be started like the following 
+
+```bash
+  python main.py --mqtt_address localhost  --ca_certs ""
+```
+
+This needs also to be changes in the `happyswing.service` file
