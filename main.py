@@ -23,7 +23,10 @@ async def connect_mqtt(addr,port,username, password,ca_certs=None,):
     tls_params = None
     if ca_certs:
         tls_params = aiomqtt.client.TLSParameters(ca_certs=ca_certs)
-    client = aiomqtt.Client(addr,port=port, username=username, password=password, tls_params = tls_params,tls_insecure=True)
+        client = aiomqtt.Client(addr,port=port, username=username, password=password, tls_params = tls_params,tls_insecure= True )
+
+    client = aiomqtt.Client(addr,port=port, username=username, password=password )
+
     await client.connect()
     print("MQTT client connected.")
     return client
@@ -56,35 +59,51 @@ def extract_led_id(topic):
         raise Exception("No integer found in the MQTT topic.") 
 
 async def main(args):
-   
-    dali_dev = await connect_dali()
-    mqtt_client = await connect_mqtt(addr=args.mqtt_address, port=args.mqtt_port,ca_certs=args.ca_certs, username= args.mqtt_username, password=args.mqtt_password)
-    
-    async with mqtt_client.messages() as msgs:
-        await mqtt_client.subscribe("cmd/led/#")
-        async for msg in msgs:
+
+    dali_dev = None
+    mqtt_client = None
+
+    while True:
+        
+        try:
+
+            dali_dev = await connect_dali()
+            mqtt_client = await connect_mqtt(addr=args.mqtt_address, port=args.mqtt_port,ca_certs=args.ca_certs, username= args.mqtt_username, password=args.mqtt_password)
             
-            try: 
-                #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+            async with mqtt_client.messages() as msgs:
+                await mqtt_client.subscribe("cmd/led/#")
+                async for msg in msgs:
+                    
+                    try: 
+                        #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
-                if msg.topic.matches("cmd/led/all/dim"): 
-                    dim_value = msg.payload.decode()
-                    await handle_dim_value(dali_dev,Broadcast(), dim_value)
+                        if msg.topic.matches("cmd/led/all/dim"): 
+                            dim_value = msg.payload.decode()
+                            await handle_dim_value(dali_dev,Broadcast(), dim_value)
 
-                elif msg.topic.matches("cmd/led/+/dim"): 
-                    dim_value = msg.payload.decode()
-                    led_id = extract_led_id(str(msg.topic))
-                    await handle_dim_value(dali_dev,GearShort(led_id), dim_value)
+                        elif msg.topic.matches("cmd/led/+/dim"): 
+                            dim_value = msg.payload.decode()
+                            led_id = extract_led_id(str(msg.topic))
+                            await handle_dim_value(dali_dev,GearShort(led_id), dim_value)
 
-                else:
-                    raise Exception("Message with unhandled Topic recieved!")
+                        else:
+                            raise Exception("Message with unhandled Topic recieved!")
 
-            except Exception as e: 
-                print(f"Exception: {e}")
-                await publish_error_message(mqtt_client, str(e))
+                    except Exception as e: 
+                        print(f"Exception: {e}")
+                        await publish_error_message(mqtt_client, str(e))
 
-    dali_dev.disconnect()
-    mqtt_client.close()
+
+            if dali_dev: 
+                dali_dev.disconnect()
+            if mqtt_client:
+                await mqtt_client.disconnect()
+
+        except aiomqtt.MqttError as e: 
+            print(f"Exception: {e}")
+            
+        await asyncio.sleep(2)
+
 
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.DEBUG)
