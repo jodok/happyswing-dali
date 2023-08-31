@@ -24,8 +24,8 @@ async def connect_mqtt(addr,port,username, password,ca_certs=None,):
     if ca_certs:
         tls_params = aiomqtt.client.TLSParameters(ca_certs=ca_certs)
         client = aiomqtt.Client(addr,port=port, username=username, password=password, tls_params = tls_params,tls_insecure= True )
-
-    client = aiomqtt.Client(addr,port=port, username=username, password=password )
+    else:
+        client = aiomqtt.Client(addr,port=port, username=username, password=password )
 
     await client.connect()
     print("MQTT client connected.")
